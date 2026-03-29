@@ -1,0 +1,12 @@
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore Database
+backend/devices.db
+
+# Ignore Pickled AI Models
+backend/*.pkl
+
+# Ignore macOS system files
+.DS_Store

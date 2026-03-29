@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Power Optimization - Login</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .login-logo {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .login-btn {
+      width: 100%;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="glass-panel login-card fade-in">
+      <div class="login-logo">
+        ⚡ AI PowerSync
+      </div>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">Simulated Intelligence Platform</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="admin" required value="admin">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" required value="password">
+        </div>
+        <button type="submit" class="btn-primary login-btn">Access Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      // Simple mock authentication
+      window.location.href = 'dashboard.html';
+    });
+  </script>
+</body>
+
+</html>
