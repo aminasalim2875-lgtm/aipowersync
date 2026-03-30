@@ -6,8 +6,20 @@ import os
 import sqlite3
 import joblib
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for the frontend to hit the API
+app_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(app_dir)
+
+# Tell Flask to serve static frontend files from the parent directory
+app = Flask(__name__, static_folder=parent_dir, static_url_path='')
+CORS(app)  # Enable CORS
+
+@app.route('/')
+def serve_index():
+    return app.send_static_file('index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return app.send_static_file(path)
 
 # Database Setup
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices.db')
@@ -121,5 +133,5 @@ def clear_all_devices():
     return jsonify({'status': 'success'})
 
 if __name__ == '__main__':
-    # Start the server on port 5000
-    app.run(debug=True, port=5000)
+    # Start the server on port 5000 and bind to all IPs (0.0.0.0 means public AWS connection)
+    app.run(host='0.0.0.0', debug=True, port=5000)

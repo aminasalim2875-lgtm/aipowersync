@@ -1,6 +1,6 @@
 // Central Store to manage data via Python SQLite API & Local Storage Fallback
 
-const API_BASE_URL = 'http://127.0.0.1:5000/api';
+const API_BASE_URL = '/api';
 const LOCAL_STORAGE_KEY = 'ai_power_system_cache';
 
 const DEFAULT_DEVICES = [
@@ -36,7 +36,7 @@ class Store {
     } catch (e) {
       // 2. Python Server is OFF! Fall back to browser memory (Local Storage)
       console.warn("Python Server is OFF. Loading data from Local Storage backup.");
-      
+
       const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (localData) {
         // We found old data in the browser
@@ -57,7 +57,7 @@ class Store {
       hours: parseFloat(hours),
       timestamp: Date.now()
     };
-    
+
     // 1. Save to Local Cache immediately (so the screen updates instantly)
     const updatedArray = [...this.devices, newDevice];
     this.saveToLocalCache(updatedArray);

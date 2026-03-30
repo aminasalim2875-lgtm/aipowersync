@@ -155,6 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.dispatchEvent(new CustomEvent('reDrawCharts'));
   });
 
+  window.addEventListener('dlUpdate', () => {
+    renderDashboard();
+    window.dispatchEvent(new CustomEvent('reDrawCharts'));
+  });
+
   // Initial render
   setTimeout(() => renderDashboard(), 50);
 });
@@ -270,6 +275,4 @@ window.initAnalytics = function() {
 
   drawCharts();
   window.addEventListener('reDrawCharts', drawCharts);
-  window.addEventListener('dlUpdate', drawCharts);
-  window.addEventListener('dlUpdate', renderDashboard);
 };
