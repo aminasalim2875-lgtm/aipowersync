@@ -20,8 +20,8 @@ CORS(app, supports_credentials=True)  # Enable CORS with credentials for session
 # MySQL Configuration (To be updated later manually or via env variables)
 DB_CONFIG = {
     'host': 'localhost', # Replace with AWS RDS endpoint if using AWS RDS
-    'user': 'root',      # Replace with your MySQL username
-    'password': 'admin', # Replace with your MySQL password
+    'user': 'flaskuser',      # Replace with your MySQL username
+    'password': 'flaskpassword123', # Replace with your MySQL password
     'database': 'aipowersync'
 }
 
