@@ -21,7 +21,7 @@ CORS(app, supports_credentials=True)  # Enable CORS with credentials for session
 DB_CONFIG = {
     'host': 'localhost', # Replace with AWS RDS endpoint if using AWS RDS
     'user': 'root',      # Replace with your MySQL username
-    'password': '',      # Replace with your MySQL password
+    'password': 'admin', # Replace with your MySQL password
     'database': 'aipowersync'
 }
 
