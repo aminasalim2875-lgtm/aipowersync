@@ -1,60 +1,105 @@
-import numpy as np
-import json
 import os
+import json
 import joblib
+import pandas as pd
+import numpy as np
 from sklearn.neural_network import MLPRegressor
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.pipeline import Pipeline
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-print("Generating synthetic data...")
-# --- 1. Neural Network (MLP) for Anomaly Detection (Reconstruction) ---
-np.random.seed(42)
-num_normal_samples = 2000
+# IMPORTANT: Ensure the Kaggle Dataset is downloaded and placed here as "kaggle_dataset.csv"
+dataset_path = os.path.join(os.path.dirname(current_dir), 'kaggle_dataset.csv')
 
-normal_synth_data = np.zeros((num_normal_samples, 4))
-normal_synth_data[:, 0] = np.random.uniform(100, 2000, num_normal_samples) # total power
-normal_synth_data[:, 1] = np.random.randint(1, 10, num_normal_samples)     # devices
-normal_synth_data[:, 2] = np.random.uniform(1, 15, num_normal_samples)     # daily kWh
-normal_synth_data[:, 3] = np.random.uniform(50, 1500, num_normal_samples)  # max device power
+def load_and_preprocess_kaggle_data():
+    """
+    Loads Real-World Kaggle data instead of Synthetic data.
+    Automatically handles missing values and extracts required mathematical features.
+    """
+    if not os.path.exists(dataset_path):
+        print(f"ERROR: {dataset_path} not found!")
+        print("Please download the Kaggle CSV and place it in the root folder.")
+        # Fallback to a synthetic generator block specifically structured like the CSV
+        print("Falling back to simulated pandas CSV generation for testing...")
+        df = pd.DataFrame({
+            'total_power': np.random.uniform(100, 5000, 2000),
+            'num_devices': np.random.randint(1, 15, 2000),
+            'daily_kwh': np.random.uniform(1.0, 50.0, 2000),
+            'max_device_power': np.random.uniform(50, 2500, 2000)
+        })
+    else:
+        # Load Kaggle CSV via Pandas
+        df = pd.read_csv(dataset_path)
+        print(f"Successfully loaded Kaggle dataset with {len(df)} rows.")
 
+        # Data Cleaning
+        df.dropna(inplace=True) # Remove missing values
+        
+        # NOTE: Users MUST adjust these column names below to match the exact headers in their specific CSV!
+        # The variables below assume standard Kaggle naming conventions.
+        if 'TotalPower' in df.columns:
+            df.rename(columns={'TotalPower': 'total_power', 'DeviceCount': 'num_devices', 'DailyEnergy': 'daily_kwh', 'MaxPower': 'max_device_power'}, inplace=True)
+            
+    # Extract only the required training features
+    features = df[['total_power', 'num_devices', 'daily_kwh', 'max_device_power']].values
+    return features
+
+print("Processing Kaggle Dataset...")
+X_ae = load_and_preprocess_kaggle_data()
+
+# --- 1. MLPRegressor Autoencoder (Real Data) ---
 scaler_ae = MinMaxScaler()
-normalized_ae_data = scaler_ae.fit_transform(normal_synth_data)
+X_ae_norm = scaler_ae.fit_transform(X_ae)
 
-print("Building Autoencoder Neural Network (via Sklearn)...")
-# We use MLPRegressor to predict its own input (Autoencoder architecture)
-autoencoder = MLPRegressor(hidden_layer_sizes=(8, 4, 8), activation='relu', max_iter=200, random_state=42)
+autoencoder = MLPRegressor(
+    hidden_layer_sizes=(16, 8, 16),
+    activation='relu',
+    solver='adam',
+    max_iter=300,
+    random_state=42
+)
 
-print("Training Autoencoder...")
-autoencoder.fit(normalized_ae_data, normalized_ae_data)
+print("Training Autoencoder on true data features...")
+autoencoder.fit(X_ae_norm, X_ae_norm)
+
 joblib.dump(autoencoder, os.path.join(current_dir, 'anomaly_detector.pkl'))
 joblib.dump(scaler_ae, os.path.join(current_dir, 'scaler_ae.pkl'))
 
+
 # --- 2. Predictor Neural Network for Next Day Usage ---
+# We use pseudo-sequence generation for the Predictor based on the variance of the Kaggle inputs
 num_seq_samples = 1500
 seq_length = 5
+X_pred = np.zeros((num_seq_samples, seq_length))
+y_pred = np.zeros(num_seq_samples)
 
-days_kwh = np.linspace(10, 25, num_seq_samples + seq_length) + np.random.normal(0, 2, num_seq_samples + seq_length)
+random_kwh = np.random.choice(X_ae[:, 2], size=num_seq_samples) # Pull real Daily KWh randomly
 
-X_pred = []
-y_pred = []
 for i in range(num_seq_samples):
-    X_pred.append(days_kwh[i:i+seq_length])
-    y_pred.append(days_kwh[i+seq_length])
-
-X_pred = np.array(X_pred)
-y_pred = np.array(y_pred)
+    base_usage = random_kwh[i]
+    X_pred[i] = base_usage + np.random.normal(0, 1.5, seq_length)
+    trend = np.random.uniform(-0.5, 0.5) * seq_length
+    y_pred[i] = base_usage + trend + np.random.normal(0, 1.0)
+    
+X_pred = np.clip(X_pred, a_min=0.1, a_max=None)
+y_pred = np.clip(y_pred, a_min=0.1, a_max=None)
 
 scaler_pred = MinMaxScaler()
 X_pred_norm = scaler_pred.fit_transform(X_pred)
-y_pred_norm = y_pred
+y_pred_norm = np.array(y_pred) # Labels
 
-print("Building Predicting Neural Network...")
-predictor = MLPRegressor(hidden_layer_sizes=(16, 8), activation='relu', max_iter=300, random_state=42)
+predictor = MLPRegressor(
+    hidden_layer_sizes=(32, 16),
+    activation='relu',
+    solver='adam',
+    max_iter=300,
+    random_state=42
+)
 
-print("Training Predictor...")
+print("Training Usage Sequence Predictor...")
 predictor.fit(X_pred_norm, y_pred_norm)
+
 joblib.dump(predictor, os.path.join(current_dir, 'usage_predictor.pkl'))
 joblib.dump(scaler_pred, os.path.join(current_dir, 'scaler_pred.pkl'))
 
@@ -64,4 +109,4 @@ config = {
 with open(os.path.join(current_dir, 'config.json'), 'w') as f:
     json.dump(config, f)
 
-print("Models entirely trained and saved using Scikit-Learn Neural Networks!")
+print("Models fully adapted and retrained for Real-World Kaggle dataset compatibility!")

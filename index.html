@@ -67,17 +67,54 @@
           <label for="password">Password</label>
           <input type="password" id="password" placeholder="••••••••" required value="password">
         </div>
-        <button type="submit" class="btn-primary login-btn">Access Dashboard</button>
+        <div style="display: flex; gap: 12px; margin-top: 1rem;">
+          <button type="submit" class="btn-primary" style="flex: 1;">Login</button>
+          <button type="button" class="btn-primary" onclick="registerUser()" style="flex: 1; background: rgba(255,255,255,0.1); box-shadow: none;">Register</button>
+        </div>
       </form>
     </div>
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      // Simple mock authentication
-      window.location.href = 'dashboard.html';
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          window.location.href = 'dashboard.html';
+        } else {
+          alert('Login Failed: ' + data.message);
+        }
+      } catch (err) {
+        alert('Cannot connect to Python Server! Ensure app.py is running.');
+      }
     });
+
+    async function registerUser() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, role: 'admin' })
+        });
+        const data = await response.json();
+        alert('Server Response: ' + data.message + '\n\nYou can now click Login!');
+      } catch (err) {
+        alert('Cannot connect to Python Server! Ensure app.py is running.');
+      }
+    }
   </script>
 </body>
 
