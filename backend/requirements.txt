@@ -7,3 +7,4 @@ joblib
 mysql-connector-python
 Flask-Session
 Werkzeug
+bcrypt

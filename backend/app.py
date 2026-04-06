@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
-from werkzeug.security import generate_password_hash, check_password_hash
+import bcrypt
 from functools import wraps
 
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -81,14 +81,14 @@ def register():
     if not username or not password:
         return jsonify({'status': 'error', 'message': 'Missing data'}), 400
 
-    hashed_password = generate_password_hash(password)
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     
     conn = get_db_connection()
     if not conn: return jsonify({'status': 'error', 'message': 'DB connection failed'}), 500
     cursor = conn.cursor()
     try:
-        cursor.execute('INSERT INTO users (username, password_hash, role) VALUES (%s, %s, %s)', 
-                       (username, hashed_password, role))
+        cursor.execute('INSERT INTO users (username, password, role) VALUES (%s, %s, %s)', 
+                       (username, hashed_password.decode('utf-8'), role))
         conn.commit()
     except Error as e:
         return jsonify({'status': 'error', 'message': str(e)}), 400
@@ -107,12 +107,12 @@ def login():
     conn = get_db_connection()
     if not conn: return jsonify({'status': 'error', 'message': 'DB connection failed'}), 500
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT id, password_hash, role FROM users WHERE username = %s', (username,))
+    cursor.execute('SELECT id, password, role FROM users WHERE username = %s', (username,))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
 
-    if user and check_password_hash(user['password_hash'], password):
+    if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
         session['user_id'] = user['id']
         session['role'] = user['role']
         return jsonify({'status': 'success', 'role': user['role']})
