@@ -129,6 +129,37 @@ def logout():
 def me():
     return jsonify({'status': 'success', 'user_id': session['user_id'], 'role': session.get('role')})
 
+# ==== ADMIN ENDPOINTS ====
+@app.route('/api/users', methods=['GET'])
+@login_required
+def get_users():
+    if session.get('role') != 'admin':
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+    conn = get_db_connection()
+    if not conn: return jsonify({'status': 'error', 'message': 'DB connection failed'}), 500
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT id, username, role, created_at FROM users')
+    users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(users)
+
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    if session.get('role') != 'admin':
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+    if user_id == 1:
+        return jsonify({'status': 'error', 'message': 'Cannot delete root admin'}), 403
+    conn = get_db_connection()
+    if not conn: return jsonify({'status': 'error', 'message': 'DB connection failed'}), 500
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'success'})
+
 # ==== DEVICE ENDPOINTS ====
 @app.route('/api/devices', methods=['GET'])
 @login_required

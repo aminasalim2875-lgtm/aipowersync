@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - AI Power Optimization</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .grid-dashboard {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 24px;
+    }
+    .col-span-12 { grid-column: span 12; }
+
+    .device-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+    <aside class="sidebar glass-panel" style="border-radius: 0; border-top: none; border-bottom: none; border-left: none;">
+      <h2>⚡ AI PowerSync</h2>
+      <nav class="nav-links">
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="analytics.html" class="nav-link">Analytics</a>
+        <a href="admin.html" class="nav-link active">Admin Panel</a>
+        <a href="index.html" class="nav-link" style="margin-top: auto;">Logout</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="header fade-in">
+        <div>
+          <h1 style="font-size: 2rem; margin-bottom: 8px;">Admin Panel</h1>
+          <p style="color: var(--text-muted);">Manage Registered Users</p>
+        </div>
+      </header>
+
+      <div class="grid-dashboard fade-in" style="animation-delay: 0.1s;">
+        <div class="col-span-12">
+          <div class="glass-panel" style="padding: 24px;">
+            <h3>Registered Users Database</h3>
+            <div id="users-container" style="margin-top: 16px;">
+              <p>Loading users...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check if admin
+      const meRes = await fetch('/api/me');
+      if (meRes.status === 401) {
+        window.location.href = 'index.html';
+        return;
+      }
+      const meData = await meRes.json();
+      if (meData.role !== 'admin') {
+        alert('Unauthorized! Redirecting to Dashboard.');
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      fetchUsers();
+    });
+
+    async function fetchUsers() {
+      const container = document.getElementById('users-container');
+      try {
+        const res = await fetch('/api/users');
+        const users = await res.json();
+        
+        container.innerHTML = '';
+        if (users.length === 0) {
+          container.innerHTML = '<p>No users found.</p>';
+          return;
+        }
+
+        users.forEach(user => {
+          const div = document.createElement('div');
+          div.className = 'device-item fade-in';
+          div.innerHTML = `
+            <div>
+              <h4 style="display: flex; align-items: center; gap: 8px;">
+                ID: ${user.id} | ${user.username}
+                <span style="font-size: 0.7rem; background: ${user.role === 'admin' ? 'var(--primary)' : 'var(--success)'}; padding: 2px 6px; border-radius: 4px; color: white;">${user.role.toUpperCase()}</span>
+              </h4>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Created: ${new Date(user.created_at).toLocaleString()}</span>
+            </div>
+            ${user.id !== 1 ? `<button onclick="deleteUser(${user.id})" style="background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 4px 12px; border-radius: 4px; cursor: pointer;">Delete</button>` : '<span>Root</span>'}
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        container.innerHTML = '<p style="color:var(--danger)">Error loading users!</p>';
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Are you sure you want to permanently delete this user? All their data will be wiped!')) return;
+      
+      try {
+        const res = await fetch('/api/users/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.status === 'success') {
+          fetchUsers(); // Refresh
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Server connection error.');
+      }
+    }
+  </script>
+</body>
+</html>

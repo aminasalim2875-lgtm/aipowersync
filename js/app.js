@@ -160,6 +160,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.dispatchEvent(new CustomEvent('reDrawCharts'));
   });
 
+  // Check if admin to unhide Admin link
+  fetch('/api/me').then(res => res.json()).then(data => {
+    if (data.role === 'admin') {
+      const adminLink = document.getElementById('admin-nav-link');
+      if (adminLink) adminLink.style.display = 'block';
+    }
+  });
+
   // Initial render
   setTimeout(() => renderDashboard(), 50);
 });
