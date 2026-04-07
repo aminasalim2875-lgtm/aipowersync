@@ -9,8 +9,9 @@ from sklearn.pipeline import Pipeline
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# IMPORTANT: Ensure the Kaggle Dataset is downloaded and placed here as "kaggle_dataset.csv"
-dataset_path = os.path.join(os.path.dirname(current_dir), 'kaggle_dataset.csv')
+# The specific filename spotted in your folder
+dataset_filename = 'Intelligent_abnormal_electricity_usage_dataset_REALWORLD.csv'
+dataset_path = os.path.join(os.path.dirname(current_dir), dataset_filename)
 
 def load_and_preprocess_kaggle_data():
     """
@@ -19,8 +20,8 @@ def load_and_preprocess_kaggle_data():
     """
     if not os.path.exists(dataset_path):
         print(f"ERROR: {dataset_path} not found!")
-        print("Please download the Kaggle CSV and place it in the root folder.")
-        # Fallback to a synthetic generator block specifically structured like the CSV
+        print(f"Please ensure {dataset_filename} is in the root folder.")
+        # Fallback to a synthetic generator
         print("Falling back to simulated pandas CSV generation for testing...")
         df = pd.DataFrame({
             'total_power': np.random.uniform(100, 5000, 2000),
@@ -36,11 +37,26 @@ def load_and_preprocess_kaggle_data():
         # Data Cleaning
         df.dropna(inplace=True) # Remove missing values
         
-        # NOTE: Users MUST adjust these column names below to match the exact headers in their specific CSV!
-        # The variables below assume standard Kaggle naming conventions.
-        if 'TotalPower' in df.columns:
-            df.rename(columns={'TotalPower': 'total_power', 'DeviceCount': 'num_devices', 'DailyEnergy': 'daily_kwh', 'MaxPower': 'max_device_power'}, inplace=True)
+        # Clean the " kWh" string from energy columns and convert to float
+        if 'Actual_Energy(kwh)' in df.columns:
+            df['Actual_Energy(kwh)'] = df['Actual_Energy(kwh)'].str.replace(' kWh', '').astype(float)
+        if 'Expected_Energy(kwh)' in df.columns:
+            df['Expected_Energy(kwh)'] = df['Expected_Energy(kwh)'].str.replace(' kWh', '').astype(float)
             
+        # Map Kaggle columns to project features
+        # 1. total_power (Watts) = Connected_Load(kw) * 1000
+        # 2. num_devices = Appliance_Score
+        # 3. daily_kwh = Actual_Energy(kwh)
+        # 4. max_device_power = Connected_Load(kw) * 0.7 (Estimated max single device)
+        
+        df_mapped = pd.DataFrame()
+        df_mapped['total_power'] = df['Connected_Load(kw)'] * 1000
+        df_mapped['num_devices'] = df['Appliance_Score']
+        df_mapped['daily_kwh'] = df['Actual_Energy(kwh)']
+        df_mapped['max_device_power'] = df['Connected_Load(kw)'] * 700 
+        
+        df = df_mapped
+
     # Extract only the required training features
     features = df[['total_power', 'num_devices', 'daily_kwh', 'max_device_power']].values
     return features

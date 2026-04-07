@@ -5,8 +5,8 @@ __pycache__/
 # Ignore Database
 backend/devices.db
 
-# Ignore Pickled AI Models
-backend/*.pkl
+# Allow Pickled AI Models for Production
+# backend/*.pkl (Removed from ignore)
 
 # Ignore macOS system files
 .DS_Store
