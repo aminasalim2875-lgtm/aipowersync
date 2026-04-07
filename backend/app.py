@@ -260,8 +260,13 @@ def analyze():
     reconstructed = ae_model.predict(features_norm)
     mse = np.mean(np.square(features_norm - reconstructed[0]))
     
-    anomaly_threshold = 0.05
+    anomaly_threshold = 0.02  # Lowered from 0.05 to increase sensitivity
     is_anomaly = bool(float(mse) > anomaly_threshold)
+    
+    # DEBUG: Print to AWS Terminal so we can see the scores in real-time
+    print(f"--- AI INFERENCE ---")
+    print(f"Inputs: {total_power}W, {num_devices} devices, {daily_kwh}kWh")
+    print(f"MSE Score: {mse:.6f} | Is Anomaly: {is_anomaly}")
     
     # 2. Daily kWh Usage Prediction
     if len(kwh_history) < seq_length:
